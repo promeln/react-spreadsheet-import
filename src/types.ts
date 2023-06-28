@@ -21,8 +21,10 @@ export type RsiProps<T extends string> = {
   rowHook?: RowHook<T>
   // Runs after column matching and on entry change
   tableHook?: TableHook<T>
+  // Runs if submit Promise returns error
+  submitFailHook?: SubmitErrorHook<T>
   // Function called after user finishes the flow
-  onSubmit: (data: Result<T>, file: File) => void
+  onSubmit: (data: Result<T>, file: File) => Promise<{any}>
   // Allows submitting with errors. Default: true
   allowInvalidSubmit?: boolean
   // Translations for each text
@@ -124,6 +126,11 @@ export type RowHook<T extends string> = (
 ) => Data<T>
 export type TableHook<T extends string> = (
   table: Data<T>[],
+  addError: (rowIndex: number, fieldKey: T, error: Info) => void,
+) => Data<T>[]
+export type SubmitErrorHook<T extends string> = (
+  table: Data<T>[],
+  submitError: any,
   addError: (rowIndex: number, fieldKey: T, error: Info) => void,
 ) => Data<T>[]
 

@@ -17,7 +17,7 @@ type Props<T extends string> = {
 }
 
 export const ValidationStep = <T extends string>({ initialData, file }: Props<T>) => {
-  const { translations, fields, onClose, onSubmit, rowHook, tableHook } = useRsi<T>()
+  const { translations, fields, onClose, onSubmit, rowHook, tableHook, submitFailHook } = useRsi<T>()
   const styles = useStyleConfig(
     "ValidationStep",
   ) as (typeof themeOverrides)["components"]["ValidationStep"]["baseStyle"]
@@ -78,7 +78,7 @@ export const ValidationStep = <T extends string>({ initialData, file }: Props<T>
 
   const rowKeyGetter = useCallback((row: Data<T> & Meta) => row.__index, [])
 
-  const submitData = async () => {
+  const submitData = () => {
     const calculatedData = data.reduce(
       (acc, value) => {
         const { __index, __errors, ...values } = value
@@ -95,9 +95,21 @@ export const ValidationStep = <T extends string>({ initialData, file }: Props<T>
       },
       { validData: [] as Data<T>[], invalidData: [] as Data<T>[], all: data },
     )
-    onSubmit(calculatedData, file)
-    setShowSubmitAlert(false)
-    onClose()
+
+    const res = onSubmit(calculatedData, file);
+    if (res?.then) { //if onSubmit returns Promise
+      res.then((res: any) => {
+        if (res?.error) {
+          setData(addErrorsAndRunHooks(data, [], undefined, undefined, submitFailHook, res.error));
+          return;
+        }
+        setShowSubmitAlert(false)
+        onClose();
+      })
+    } else {
+      setShowSubmitAlert(false)
+      onClose();
+    }
   }
   const onContinue = () => {
     const invalidData = data.find((value) => {

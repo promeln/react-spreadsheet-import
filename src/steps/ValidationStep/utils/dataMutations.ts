@@ -1,12 +1,15 @@
 import type { Data, Fields, Info, RowHook, TableHook } from "../../../types"
 import type { Meta, Errors } from "../types"
 import { v4 } from "uuid"
+import {SubmitErrorHook} from "../../../types";
 
 export const addErrorsAndRunHooks = <T extends string>(
   data: (Data<T> & Partial<Meta>)[],
   fields: Fields<T>,
   rowHook?: RowHook<T>,
   tableHook?: TableHook<T>,
+  submitFailHook?: SubmitErrorHook<T>,
+  submitError?: any,
 ): (Data<T> & Meta)[] => {
   const errors: Errors = {}
 
@@ -23,6 +26,10 @@ export const addErrorsAndRunHooks = <T extends string>(
 
   if (rowHook) {
     data = data.map((value, index) => rowHook(value, (...props) => addHookError(index, ...props), data))
+  }
+
+  if (submitFailHook) {
+    data = submitFailHook(data, submitError, addHookError)
   }
 
   fields.forEach((field) => {
